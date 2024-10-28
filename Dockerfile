@@ -21,7 +21,8 @@ ARG UID=0
 ARG GID=0
 
 ######## WebUI frontend ########
-FROM --platform=$BUILDPLATFORM node:22-alpine3.20 AS build
+FROM node:22-alpine3.20 AS build
+#FROM --platform=$BUILDPLATFORM node:22-alpine3.20 AS build
 ARG BUILD_HASH
 
 WORKDIR /app
@@ -34,8 +35,9 @@ ENV APP_BUILD_HASH=${BUILD_HASH}
 RUN npm run build
 
 ######## WebUI backend ########
-FROM python:3.11-slim-bookworm AS base
-
+#FROM python:3.11-slim-bookworm AS base
+#FROM python:3.11-bookworm AS base
+FROM python:3.11.10-bullseye AS base
 # Use args
 ARG USE_CUDA
 ARG USE_OLLAMA
@@ -104,6 +106,61 @@ RUN echo -n 00000000-0000-0000-0000-000000000000 > $HOME/.cache/chroma/telemetry
 
 # Make sure the user has access to the app and root directory
 RUN chown -R $UID:$GID /app $HOME
+
+#安装apt-key命令需要的依赖包
+#RUN  apt-get install -y --no-install-recommends gnupg && \
+#RUN  apt-get install -y gnupg && \
+#     apt-key adv --keyserver keyserver.ubuntu.com --recv-keys  0E98404D386FA1D9 6ED0E7B82643E131 F8D2585B8783D481 && \
+#     rm -rf /var/lib/apt/lists/*
+###RUN  sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys  0E98404D386FA1D9 6ED0E7B82643E131 F8D2585B8783D481
+
+#安装gnupg2
+#RUN apt-get update && \
+#    apt-get install -y --no-install-recommends gnupg2 && \
+#    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 0E98404D386FA1D9 6ED0E7B82643E131 F8D2585B8783D481 && \
+#    rm -rf /var/lib/apt/lists/*
+
+# Install GPG keys directly to the trusted keyring
+#RUN apt-get update && \
+#    apt-get install -y --no-install-recommends gnupg2 && \
+#    # Add the public keys directly to the trusted keyring
+#    gpg --no-default-keyring --keyring /etc/apt/trusted.gpg.d/debian.gpg --keyserver keyserver.ubuntu.com --recv-keys \
+#        0E98404D386FA1D9 6ED0E7B82643E131 F8D2585B8783D481 54404762BBB6E853 BDE6D2B9216EC7A8 && \
+#    rm -rf /var/lib/apt/lists/*
+
+#使用pgp.mit.edu来获取密钥
+#RUN apt-get update && \
+##    apt-get install -y --no-install-recommends gnupg2 && \
+#   gpg --no-default-keyring --keyring /etc/apt/trusted.gpg.d/debian.gpg --keyserver pgp.mit.edu --recv-keys \
+#    0E98404D386FA1D9 6ED0E7B82643E131 F8D2585B8783D481 54404762BBB6E853 BDE6D2B9216EC7A8 && \
+#    rm -rf /var/lib/apt/lists/*
+
+# 使用wget更新密钥
+#RUN apt-get update && \
+##    apt-get install -y --no-install-recommends gnupg2 wget && \
+#    wget -qO - https://ftp-master.debian.org/keys/release-11.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/debian.gpg && \
+#    rm -rf /var/lib/apt/lists/*    
+
+#看下镜像源
+#RUN cat /etc/apt/sources.list
+
+#添加缺失的公钥
+#RUN apt-get install gnupg gnupg1 gnupg2 && \
+#    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 0E98404D386FA1D9 6ED0E7B82643E131 F8D2585B8783D481 && \
+#    apt-get  update
+
+#移走/etc/apt/trusted.gpg.d/下面的密钥，把/usr/share/keyrings/下面的密钥放到/etc/apt/trusted.gpg.d/下面，方便apt命令可以使用这些密钥
+#RUN mkdir /root/useless_gpgs  && \
+##    mv /etc/apt/trusted.gpg.d/debian-archive-*.asc  /root/useless_gpgs/ && \
+#    ln -s /usr/share/keyrings/debian-archive-* /etc/apt/trusted.gpg.d/ && \
+#    apt-get update
+
+#再试一次
+#RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 0E98404D386FA1D9 6ED0E7B82643E131 F8D2585B8783D481 54404762BBB6E853 BDE6D2B9216EC7A8
+
+# 更新 APT 源
+#RUN apt-get update
+
 
 RUN if [ "$USE_OLLAMA" = "true" ]; then \
     apt-get update && \
